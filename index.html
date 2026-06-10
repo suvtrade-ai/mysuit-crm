@@ -650,6 +650,7 @@ async function triggerWebhook(type, order) {
     'new_order':   s.newOrderWebhook   || _N8N + '/new-order',
     'order_ready': s.readyWebhook      || _N8N + '/order-ready',
     'picked_up':   s.pickedUpWebhook   || _N8N + '/picked-up',
+    'in_progress': s.inProgressWebhook  || _N8N + '/in-progress',
     'remarketing': s.remarketingWebhook || _N8N + '/remarketing'
   };
   const url = urls[type];
@@ -720,6 +721,7 @@ function updateStatus(orderId, newStatus) {
   if (newStatus === 'pickedup') orders[idx].pickedUpAt = new Date().toISOString();
   DB.saveOrders(orders);
   renderAll();
+  if (newStatus === 'inprogress') triggerWebhook('in_progress', orders[idx]);
   if (newStatus === 'ready') triggerWebhook('order_ready', orders[idx]);
   if (newStatus === 'pickedup') triggerWebhook('picked_up', orders[idx]);
   closeDetail();
