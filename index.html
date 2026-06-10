@@ -643,23 +643,21 @@ const nationalityFlags = {
 // ─────────────────────────────────────────────
 // WEBHOOK LAYER
 // ─────────────────────────────────────────────
-const N8N_BASE = 'https://suvtrade16924.n8n-wsk.com/webhook';
-const WEBHOOK_URLS = {
-  'new_order':   N8N_BASE + '/new-order',
-  'order_ready': N8N_BASE + '/order-ready',
-  'picked_up':   N8N_BASE + '/picked-up',
-  'remarketing': N8N_BASE + '/remarketing'
-};
-
 async function triggerWebhook(type, order) {
   const s = DB.getSettings();
-  const url = WEBHOOK_URLS[type] || s[type + 'Webhook'];
+  const urls = {
+    'new_order': s.newOrderWebhook,
+    'order_ready': s.readyWebhook,
+    'picked_up': s.pickedUpWebhook,
+    'remarketing': s.remarketingWebhook
+  };
+  const url = urls[type];
   if (!url) {
     DB.addLog(`[${type}] No webhook URL set — skipped`, 'error');
     renderLogs();
     return;
   }
-  const payload = { event: type, order, shop: s.shopName || 'My Suit Bangkok', address: s.address || '3rd Floor, Platinum Fashion Mall, Bangkok', mapsLink: s.mapsLink || '', timestamp: new Date().toISOString() };
+  const payload = { event: type, order, shop: s.shopName, address: s.address, mapsLink: s.mapsLink, timestamp: new Date().toISOString() };
   try {
     const resp = await fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     const msg = `[${type}] → ${resp.ok ? '✓ Sent' : '✗ Error '+resp.status} | ${order.name}`;
@@ -1275,8 +1273,7 @@ function selectSegment(id, el) {
 async function sendCampaignBlast() {
   if (!selectedTemplate) return;
   const s = DB.getSettings();
-  const blastWebhook = N8N_BASE + '/segment-blast';
-  if (!blastWebhook) {
+  if (!s.blastWebhook) {
     showNotification('⚠️ Set Segment Blast webhook URL in Settings first', 'error');
     return;
   }
@@ -1299,7 +1296,7 @@ async function sendCampaignBlast() {
   };
 
   try {
-    const resp = await fetch(blastWebhook, {
+    const resp = await fetch(s.blastWebhook, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -1493,8 +1490,7 @@ function updateWaBtn() {
 async function sendWaCampaignBlast() {
   if (!selectedWaTemplate) return;
   const s = DB.getSettings();
-  const waBlastWebhook = N8N_BASE + '/wa-blast';
-  if (!waBlastWebhook) {
+  if (!s.waBlastWebhook) {
     showNotification('⚠️ Set WhatsApp Blast webhook URL in Settings first', 'error');
     return;
   }
@@ -1511,7 +1507,7 @@ async function sendWaCampaignBlast() {
   };
 
   try {
-    const resp = await fetch(waBlastWebhook, {
+    const resp = await fetch(s.waBlastWebhook, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -1962,4 +1958,12 @@ renderAll();
 
 // Mobile enhancements
 if (window.innerWidth <= 768) {
-  // Show swi
+  // Show swipe hint on pipeline
+  const hint = document.querySelector('.mobile-swipe-hint');
+  if (hint) hint.style.display = 'block';
+  // Extra bottom padding so browser chrome doesn't cover last items
+  document.querySelector('.container').style.paddingBottom = '32px';
+}
+</script>
+</body>
+</html>
