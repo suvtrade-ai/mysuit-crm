@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Suit Bangkok — CRM</title>
+<style>
+  :root {
+    --bg: #f0f2f7;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1a1a2e;
+    --text-muted: #64748b;
+    --primary: #1a1a2e;
+    --accent: #f59e0b;
+    --pending: #3b82f6;
+    --ready: #f59e0b;
+    --pickedup: #22c55e;
+    --cancelled: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ─── NAV ─── */
+  nav { background: var(--primary); color: #fff; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .nav-brand { font-size: 16px; font-weight: 700; letter-spacing: -.3px; }
+  .nav-brand span { color: var(--accent); }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .btn { padding: 7px 16px; border-radius: 7px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-ghost { background: rgba(255,255,255,.15); color: #fff; }
+
+  /* ─── LAYOUT ─── */
+  .container { max-width: 1280px; margin: 0 auto; padding: 20px 24px; }
+
+  /* ─── STATS ─── */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border-radius: 10px; padding: 14px 18px; border: 1px solid var(--border); }
+  .stat-num { font-size: 26px; font-weight: 800; line-height: 1; }
+  .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+
+  /* ─── PIPELINE ─── */
+  .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .col { background: #e8eaf0; border-radius: 10px; padding: 12px; min-height: 200px; }
+  .col-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .col-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+  .col-count { background: var(--primary); color: #fff; border-radius: 20px; font-size: 10px; font-weight: 700; padding: 2px 8px; }
+
+  .col-pending .col-title { color: #1d4ed8; }
+  .col-pending .col-count { background: #3b82f6; }
+  .col-progress .col-title { color: #92400e; }
+  .col-progress .col-count { background: #f59e0b; }
+  .col-ready .col-title { color: #065f46; }
+  .col-ready .col-count { background: #10b981; }
+  .col-pickedup .col-title { color: #166534; }
+  .col-pickedup .col-count { background: #22c55e; }
+
+  /* ─── ORDER CARD ─── */
+  .order-card { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid var(--border); cursor: pointer; transition: box-shadow .15s, transform .15s; }
+  .order-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.1); transform: translateY(-1px); }
+  .oc-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+  .oc-name { font-size: 13px; font-weight: 700; }
+  .oc-flag { font-size: 16px; }
+  .oc-items { font-size: 11px; color: var(--text-muted); margin-bottom: 5px; }
+  .oc-bottom { display: flex; align-items: center; justify-content: space-between; }
+  .oc-time { font-size: 10px; color: var(--text-muted); }
+  .oc-amount { font-size: 12px; font-weight: 700; color: var(--text); }
+  .oc-actions { display: flex; gap: 5px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .action-btn { flex: 1; padding: 5px; border-radius: 5px; border: none; cursor: pointer; font-size: 10px; font-weight: 600; transition: opacity .15s; }
+  .action-btn:hover { opacity: .8; }
+  .btn-ready { background: #d1fae5; color: #065f46; }
+  .btn-pickup { background: #dcfce7; color: #166534; }
+  .btn-wa { background: #dcfce7; color: #166534; }
+  .btn-view { background: #e0e7ff; color: #3730a3; }
+  .badge-nationality { display: inline-block; background: #f1f5f9; color: #475569; border-radius: 4px; font-size: 9px; font-weight: 600; padding: 1px 5px; margin-left: 4px; vertical-align: middle; }
+
+  /* ─── MODAL ─── */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .overlay.active { display: flex; }
+  .modal { background: var(--card); border-radius: 14px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--card); z-index: 1; }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .modal-close { width: 30px; height: 30px; border-radius: 50%; border: none; background: var(--bg); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+  .modal-body { padding: 20px 24px; }
+
+  /* ─── FORM ─── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+  input, select, textarea { border: 1.5px solid var(--border); border-radius: 7px; padding: 9px 12px; font-size: 13px; font-family: inherit; color: var(--text); outline: none; transition: border-color .15s; background: #fff; }
+  input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+  textarea { resize: vertical; min-height: 70px; }
+  .form-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+  .btn-cancel { background: var(--bg); color: var(--text); }
+
+  /* ─── DETAIL MODAL ─── */
+  .detail-section { margin-bottom: 18px; }
+  .detail-section h4 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 10px; }
+  .detail-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .label { color: var(--text-muted); }
+  .detail-row .value { font-weight: 600; text-align: right; max-width: 55%; }
+  .status-badge { display: inline-block; border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700; }
+  .status-pending { background: #dbeafe; color: #1e40af; }
+  .status-inprogress { background: #fef3c7; color: #92400e; }
+  .status-ready { background: #d1fae5; color: #065f46; }
+  .status-pickedup { background: #dcfce7; color: #166534; }
+  .status-cancelled { background: #fee2e2; color: #991b1b; }
+  .timeline { list-style: none; padding: 0; }
+  .timeline li { display: flex; gap: 10px; padding: 6px 0; font-size: 12px; }
+  .tl-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-top: 4px; flex-shrink: 0; }
+  .tl-text { color: var(--text-muted); }
+  .tl-text strong { color: var(--text); }
+
+  /* ─── WEBHOOK LOG ─── */
+  .webhook-log { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 12px; font-size: 11px; font-family: 'Courier New', monospace; max-height: 120px; overflow-y: auto; margin-top: 10px; }
+  .log-line { padding: 2px 0; }
+  .log-line.success { color: #4ade80; }
+  .log-line.error { color: #f87171; }
+  .log-line.info { color: #93c5fd; }
+
+  /* ─── SETTINGS ─── */
+  .settings-grid { display: grid; gap: 12px; }
+
+  /* ─── SEARCH ─── */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+  .search-input { flex: 1; min-width: 200px; border: 1.5px solid var(--border); border-radius: 7px; padding: 8px 14px; font-size: 13px; outline: none; background: var(--card); }
+  .search-input:focus { border-color: var(--primary); }
+  .filter-select { border: 1.5px solid var(--border); border-radius: 7px; padding: 8px 12px; font-size: 13px; background: var(--card); outline: none; }
+
+  /* ─── TABS ─── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 4px; width: fit-content; flex-wrap: wrap; }
+  .tab { padding: 7px 16px; border-radius: 6px; border: none; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-muted); transition: all .15s; }
+  .tab.active { background: var(--primary); color: #fff; }
+
+  /* ─── CAMPAIGN MANAGER ─── */
+  .campaign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .campaign-card { background: var(--card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; }
+  .cc-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .cc-title { font-size: 14px; font-weight: 700; }
+  .cc-auto { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 2px 8px; border-radius: 20px; }
+  .cc-auto.auto { background: #d1fae5; color: #065f46; }
+  .cc-auto.manual { background: #dbeafe; color: #1e40af; }
+  .cc-body { padding: 14px 18px; }
+  .cc-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px; }
+  .cc-schedule { font-size: 11px; color: #f59e0b; font-weight: 600; margin-bottom: 12px; }
+  .cc-segments { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+  .seg-chip { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: #f1f5f9; color: #475569; cursor: pointer; border: 1.5px solid transparent; transition: all .15s; }
+  .seg-chip.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .campaign-form { display: grid; gap: 10px; }
+  .campaign-form input, .campaign-form textarea { width: 100%; border: 1.5px solid var(--border); border-radius: 7px; padding: 8px 11px; font-size: 12px; font-family: inherit; outline: none; }
+  .campaign-form input:focus, .campaign-form textarea:focus { border-color: var(--primary); }
+  .campaign-form label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); display: block; margin-bottom: 3px; }
+  .campaign-form textarea { min-height: 60px; resize: vertical; }
+  .btn-send-campaign { width: 100%; padding: 10px; border-radius: 7px; border: none; background: var(--primary); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 4px; transition: opacity .15s; }
+  .btn-send-campaign:hover { opacity: .85; }
+  .btn-send-campaign:disabled { opacity: .4; cursor: not-allowed; }
+  .campaign-log { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 12px; font-size: 11px; font-family: monospace; max-height: 100px; overflow-y: auto; margin-top: 10px; }
+  .scheduled-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .scheduled-row:last-child { border-bottom: none; }
+  .sr-left .sr-name { font-size: 13px; font-weight: 700; }
+  .sr-left .sr-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .sr-badge { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .sr-badge.active { background: #d1fae5; color: #065f46; }
+  .sr-badge.scheduled { background: #dbeafe; color: #1e40af; }
+  .mailchimp-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
+  .mc-stat { background: #f8f9fb; border-radius: 8px; padding: 12px; text-align: center; border: 1px solid var(--border); }
+  .mc-stat-num { font-size: 22px; font-weight: 800; color: var(--primary); }
+  .mc-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+  /* ─── EMPTY STATE ─── */
+  .empty-state { text-align: center; padding: 30px 20px; color: var(--text-muted); }
+  .empty-state .icon { font-size: 32px; margin-bottom: 8px; }
+  .empty-state p { font-size: 13px; }
+
+  /* ─── NOTIFICATION ─── */
+  .notification { position: fixed; bottom: 24px; right: 24px; background: var(--primary); color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 1000; transform: translateY(80px); opacity: 0; transition: all .3s; max-width: 300px; }
+  .notification.show { transform: translateY(0); opacity: 1; }
+  .notification.success { background: #065f46; }
+  .notification.error { background: #991b1b; }
+
+  /* ─── TOUCH ─── */
+  * { -webkit-tap-highlight-color: transparent; }
+  button, .btn, .order-card, .seg-chip, .tab, .import-tab { touch-action: manipulation; }
+
+  @media (max-width: 768px) {
+    /* ── NAV ── */
+    nav { padding: 0 12px; height: 52px; }
+    .nav-brand { font-size: 13px; }
+    .nav-right { gap: 6px; }
+    .btn-ghost.btn-sm { padding: 6px 9px; font-size: 11px; }
+    .btn-primary { padding: 7px 12px; font-size: 12px; }
+
+    /* ── CONTAINER ── */
+    .container { padding: 12px; }
+
+    /* ── TABS ── */
+    .tabs { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; gap: 0; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { white-space: nowrap; flex-shrink: 0; padding: 9px 13px; font-size: 12px; }
+
+    /* ── TOOLBAR ── */
+    .toolbar { flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .search-input { width: 100%; min-width: unset; font-size: 16px; }
+    .filter-select { width: 100%; font-size: 16px; }
+    .toolbar > .btn { width: 100%; text-align: center; }
+
+    /* ── STATS ── */
+    .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+    .stat-num { font-size: 20px; }
+    .stat-card { padding: 11px 13px; }
+
+    /* ── KANBAN — horizontal swipe with snap ── */
+    .pipeline {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      gap: 10px;
+      padding-bottom: 10px;
+    }
+    .pipeline::-webkit-scrollbar { height: 3px; }
+    .pipeline::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .col { flex: 0 0 min(286px, 82vw); scroll-snap-align: start; min-height: 160px; }
+
+    /* ── ORDER CARDS ── */
+    .order-card { padding: 12px; }
+    .oc-name { font-size: 14px; }
+    .oc-items { font-size: 12px; }
+    .action-btn { padding: 9px 4px; font-size: 11px; min-height: 38px; }
+
+    /* ── CAMPAIGN MANAGER ── */
+    .campaign-grid { grid-template-columns: 1fr; }
+    .mailchimp-stats { grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 12px; }
+    .mc-stat { padding: 9px; }
+    .mc-stat-num { font-size: 18px; }
+    .seg-chip { font-size: 11px; padding: 5px 10px; }
+    /* Collapse filter builder 2-col inline grids to single column */
+    #email-filter-panel > div:first-child,
+    #wa-filter-panel > div:first-child { grid-template-columns: 1fr !important; }
+    .btn-send-campaign { padding: 13px; font-size: 13px; min-height: 48px; }
+
+    /* ── MODALS — sheet style, slides up from bottom ── */
+    .overlay { align-items: flex-end; padding: 0; }
+    .modal {
+      border-radius: 20px 20px 0 0;
+      max-width: 100%;
+      width: 100%;
+      max-height: 92vh;
+    }
+    .import-wide-modal { max-height: 92vh; }
+    .modal-header { padding: 14px 18px 12px; }
+    .modal-body { padding: 14px 18px; }
+    .form-actions { padding: 10px 18px 20px; margin-top: 4px; }
+    /* Drag handle indicator on modals */
+    .modal-header::before {
+      content: '';
+      display: block;
+      width: 40px;
+      height: 4px;
+      background: #cbd5e1;
+      border-radius: 2px;
+      margin: 0 auto 12px;
+    }
+
+    /* ── FORMS ── */
+    .form-grid { grid-template-columns: 1fr; gap: 10px; }
+    .form-group.full { grid-column: 1; }
+    /* 16px prevents iOS auto-zoom on focus */
+    input, select, textarea { font-size: 16px; }
+    .form-actions .btn { flex: 1; padding: 13px; font-size: 14px; min-height: 48px; }
+
+    /* ── DETAIL MODAL ── */
+    .detail-row { flex-direction: column; gap: 1px; }
+    .detail-row .label { font-size: 10px; }
+    .detail-row .value { font-weight: 700; font-size: 13px; }
+
+    /* ── IMPORT MODAL ── */
+    .col-map-grid { grid-template-columns: 1fr; }
+    .col-map-label { padding: 4px 0 0; }
+    .import-drop-zone { padding: 20px; }
+    .import-paste-area { min-height: 90px; font-size: 13px; }
+
+    /* ── SCHEDULED ROWS ── */
+    .scheduled-row { flex-direction: column; gap: 4px; align-items: flex-start; }
+    .sr-badge { align-self: flex-start; }
+  }
+
+  /* ── Very small phones (SE, Moto G) ── */
+  @media (max-width: 380px) {
+    nav { padding: 0 10px; }
+    .nav-brand { font-size: 12px; }
+    .btn-ghost.btn-sm { padding: 5px 7px; font-size: 10px; }
+    .col { flex: 0 0 88vw; }
+    .stats { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .stat-num { font-size: 18px; }
+  }
+
+  /* ─── IMPORT MODAL ─── */
+  .import-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .import-tab { padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; background: none; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .import-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .import-drop-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; transition: all .15s; background: #f8fafc; }
+  .import-drop-zone:hover, .import-drop-zone.drag-over { border-color: var(--accent); background: #fffbeb; }
+  .import-drop-zone .dz-icon { font-size: 32px; margin-bottom: 8px; }
+  .import-drop-zone .dz-text { font-size: 13px; font-weight: 600; color: var(--text); }
+  .import-drop-zone .dz-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .import-paste-area { width: 100%; min-height: 120px; border: 1.5px solid var(--border); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 11px; resize: vertical; outline: none; }
+  .import-paste-area:focus { border-color: var(--primary); }
+  .col-map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .col-map-row { display: contents; }
+  .col-map-label { font-size: 11px; font-weight: 700; color: var(--text-muted); padding: 6px 0; display: flex; align-items: center; }
+  .col-map-select { font-size: 11px; border: 1.5px solid var(--border); border-radius: 6px; padding: 5px 8px; width: 100%; outline: none; }
+  .col-map-select:focus { border-color: var(--primary); }
+  .import-preview { overflow-x: auto; margin-bottom: 14px; border: 1px solid var(--border); border-radius: 8px; }
+  .import-preview table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .import-preview th { background: #f1f5f9; padding: 6px 10px; text-align: left; font-weight: 700; color: var(--text-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .import-preview td { padding: 5px 10px; border-bottom: 1px solid #f1f5f9; color: var(--text); white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+  .import-preview tr:last-child td { border-bottom: none; }
+  .import-summary { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #166534; margin-bottom: 12px; }
+  .import-error { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #991b1b; margin-bottom: 12px; }
+  .import-wide-modal { width: min(780px, 95vw); max-height: 90vh; overflow-y: auto; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">✂️ My Suit <span>Bangkok</span></div>
+  <div class="nav-right">
+    <button class="btn btn-ghost btn-sm" onclick="openImport()">📥 Import</button>
+    <button class="btn btn-ghost btn-sm" onclick="openSettings()">⚙️ Settings</button>
+    <button class="btn btn-primary" onclick="openNewOrder()">+ New Order</button>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('pipeline', this)">📋 Pipeline</button>
+    <button class="tab" onclick="switchTab('all', this)">📦 All Orders</button>
+    <button class="tab" onclick="switchTab('remarketing', this)">🔄 Remarketing</button>
+    <button class="tab" onclick="switchTab('campaigns', this)">📧 Campaigns</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats" id="stats"></div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <input class="search-input" id="searchInput" placeholder="🔍  Search by name, phone, nationality..." oninput="renderAll()">
+    <select class="filter-select" id="filterNationality" onchange="renderAll()">
+      <option value="">All nationalities</option>
+    </select>
+    <button class="btn btn-sm" style="background:#f1f5f9;color:#475569;" onclick="exportCSV()">⬇ Export CSV</button>
+  </div>
+
+  <!-- PIPELINE VIEW -->
+  <div id="view-pipeline">
+    <div class="mobile-swipe-hint" style="display:none;font-size:11px;color:#94a3b8;text-align:center;margin-bottom:6px;letter-spacing:.3px;">← Swipe to see all columns →</div>
+    <div class="pipeline">
+      <div class="col col-pending">
+        <div class="col-header">
+          <span class="col-title">📋 Order Placed</span>
+          <span class="col-count" id="count-pending">0</span>
+        </div>
+        <div id="col-pending"></div>
+      </div>
+      <div class="col col-progress">
+        <div class="col-header">
+          <span class="col-title">✂️ In Progress</span>
+          <span class="col-count" id="count-inprogress">0</span>
+        </div>
+        <div id="col-inprogress"></div>
+      </div>
+      <div class="col col-ready">
+        <div class="col-header">
+          <span class="col-title">✅ Ready</span>
+          <span class="col-count" id="count-ready">0</span>
+        </div>
+        <div id="col-ready"></div>
+      </div>
+      <div class="col col-pickedup">
+        <div class="col-header">
+          <span class="col-title">🎉 Picked Up</span>
+          <span class="col-count" id="count-pickedup">0</span>
+        </div>
+        <div id="col-pickedup"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALL ORDERS VIEW -->
+  <div id="view-all" style="display:none;">
+    <div id="all-orders-list"></div>
+  </div>
+
+  <!-- REMARKETING VIEW -->
+  <div id="view-remarketing" style="display:none;">
+    <div id="remarketing-list"></div>
+  </div>
+
+  <!-- CAMPAIGN MANAGER VIEW -->
+  <div id="view-campaigns" style="display:none;">
+    <div id="campaign-manager"></div>
+  </div>
+</div>
+
+<!-- ── NEW ORDER MODAL ── -->
+<div class="overlay" id="newOrderOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">New Order</span>
+      <button class="modal-close" onclick="closeNewOrder()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Customer Name *</label>
+          <input id="f-name" type="text" placeholder="e.g. John Smith">
+        </div>
+        <div class="form-group">
+          <label>Phone (WhatsApp) *</label>
+          <input id="f-phone" type="text" placeholder="+66812345678">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input id="f-email" type="email" placeholder="john@email.com">
+        </div>
+        <div class="form-group">
+          <label>Nationality</label>
+          <select id="f-nationality">
+            <option>Thai</option>
+            <option>British</option>
+            <option>American</option>
+            <option>Australian</option>
+            <option>Chinese</option>
+            <option>Japanese</option>
+            <option>Korean</option>
+            <option>Indian</option>
+            <option>Singaporean</option>
+            <option>German</option>
+            <option>French</option>
+            <option>Russian</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Items Ordered *</label>
+          <input id="f-items" type="text" placeholder="e.g. 2 suits, 3 shirts, 1 blazer">
+        </div>
+        <div class="form-group">
+          <label>Fabric / Style</label>
+          <input id="f-fabric" type="text" placeholder="e.g. Navy wool, slim fit">
+        </div>
+        <div class="form-group">
+          <label>Amount (THB) *</label>
+          <input id="f-amount" type="number" placeholder="15000">
+        </div>
+        <div class="form-group">
+          <label>Ready By (time/date)</label>
+          <input id="f-readyby" type="text" placeholder="e.g. Tomorrow 2pm">
+        </div>
+        <div class="form-group">
+          <label>Hotel / Staying At</label>
+          <input id="f-hotel" type="text" placeholder="e.g. Marriott Sukhumvit">
+        </div>
+        <div class="form-group full">
+          <label>Measurements / Notes</label>
+          <textarea id="f-notes" placeholder="Chest 40, waist 34, sleeve 25... any special instructions"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-cancel" onclick="closeNewOrder()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveOrder()">Save & Trigger Automation</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ORDER DETAIL MODAL ── -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="detail-title">Order Detail</span>
+      <button class="modal-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+  </div>
+</div>
+
+<!-- ── SETTINGS MODAL ── -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">⚙️ Settings — n8n Webhooks</span>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Paste your n8n webhook URLs below. Copy them from your n8n workflow's Webhook trigger node.</p>
+      <div class="settings-grid">
+        <div class="form-group">
+          <label>🆕 New Order Webhook URL</label>
+          <input id="s-new-order" type="url" placeholder="https://suvtrade16924.n8n-wsk.com/webhook/new-order">
+        </div>
+        <div class="form-group">
+          <label>✅ Order Ready Webhook URL</label>
+          <input id="s-ready" type="url" placeholder="https://suvtrade16924.n8n-wsk.com/webhook/order-ready">
+        </div>
+        <div class="form-group">
+          <label>🎉 Picked Up Webhook URL</label>
+          <input id="s-pickedup" type="url" placeholder="https://suvtrade16924.n8n-wsk.com/webhook/picked-up">
+        </div>
+        <div class="form-group">
+          <label>📢 Remarketing Webhook URL</label>
+          <input id="s-remarketing" type="url" placeholder="https://suvtrade16924.n8n-wsk.com/webhook/remarketing">
+        </div>
+        <div class="form-group">
+          <label>📧 Segment Blast Webhook URL (Email)</label>
+          <input id="s-blast" type="url" placeholder="https://suvtrade16924.n8n-wsk.com/webhook/segment-blast">
+        </div>
+        <div class="form-group">
+          <label>💬 WhatsApp Blast Webhook URL</label>
+          <input id="s-wa-blast" type="url" placeholder="https://suvtrade16924.n8n-wsk.com/webhook/wa-blast">
+        </div>
+        <div class="form-group">
+          <label>🏪 Shop Name</label>
+          <input id="s-shopname" type="text" placeholder="My Suit Bangkok" value="My Suit Bangkok">
+        </div>
+        <div class="form-group">
+          <label>📍 Shop Address (for messages)</label>
+          <input id="s-address" type="text" placeholder="3rd Floor, Platinum Fashion Mall, Bangkok">
+        </div>
+        <div class="form-group">
+          <label>🗺 Google Maps Link</label>
+          <input id="s-maps" type="url" placeholder="https://maps.app.goo.gl/...">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-cancel" onclick="closeSettings()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+      </div>
+      <div style="margin-top:16px;">
+        <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Webhook Log</div>
+        <div class="webhook-log" id="webhook-log">
+          <div class="log-line info">// Webhook activity will appear here...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── IMPORT MODAL ── -->
+<div class="overlay" id="importOverlay">
+  <div class="modal import-wide-modal">
+    <div class="modal-header">
+      <span class="modal-title">📥 Import Client Records</span>
+      <button class="modal-close" onclick="closeImport()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:16px;">
+        💡 All imported records will be saved as <strong>Picked Up</strong> (historical clients). Duplicates are skipped by phone number.
+        <span style="float:right;cursor:pointer;font-weight:600;" onclick="downloadImportTemplate()">📄 Download Template CSV</span>
+      </div>
+
+      <!-- Tabs -->
+      <div class="import-tabs">
+        <button class="import-tab active" id="itab-upload" onclick="switchImportTab('upload')">📁 Upload CSV File</button>
+        <button class="import-tab" id="itab-paste" onclick="switchImportTab('paste')">📋 Paste CSV Text</button>
+      </div>
+
+      <!-- Upload Panel -->
+      <div id="import-panel-upload">
+        <div class="import-drop-zone" id="drop-zone" onclick="document.getElementById('csv-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleFileDrop(event)">
+          <div class="dz-icon">📂</div>
+          <div class="dz-text">Click to browse or drag & drop CSV file</div>
+          <div class="dz-sub">Supports .csv and .txt files • Any column order</div>
+        </div>
+        <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="handleFileSelect(event)">
+      </div>
+
+      <!-- Paste Panel -->
+      <div id="import-panel-paste" style="display:none;">
+        <textarea class="import-paste-area" id="csv-paste-area" placeholder="Paste your CSV data here...&#10;&#10;Example:&#10;Name,Phone,Email,Nationality,Items,Amount&#10;John Smith,66812345678,john@email.com,British,Suit x2,45000"></textarea>
+        <button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="parsePasteData()">Preview →</button>
+      </div>
+
+      <!-- Column Mapper (hidden until data loaded) -->
+      <div id="import-mapper" style="display:none;margin-top:16px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;margin-bottom:10px;">Map Columns to CRM Fields</div>
+        <div class="col-map-grid" id="col-map-grid"></div>
+      </div>
+
+      <!-- Preview Table -->
+      <div id="import-preview-section" style="display:none;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;margin-bottom:8px;">Preview <span id="preview-count"></span></div>
+        <div class="import-preview" id="import-preview-table"></div>
+      </div>
+
+      <!-- Result messages -->
+      <div id="import-message" style="display:none;"></div>
+
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-cancel" onclick="closeImport()">Cancel</button>
+      <button class="btn btn-primary" id="import-btn" onclick="executeImport()" style="display:none;">📥 Import All Records</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notification" id="notification"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA LAYER
+// ─────────────────────────────────────────────
+const DB = {
+  getOrders: () => JSON.parse(localStorage.getItem('msb_orders') || '[]'),
+  saveOrders: (orders) => localStorage.setItem('msb_orders', JSON.stringify(orders)),
+  getSettings: () => JSON.parse(localStorage.getItem('msb_settings') || '{}'),
+  saveSettings: (s) => localStorage.setItem('msb_settings', JSON.stringify(s)),
+  getLogs: () => JSON.parse(localStorage.getItem('msb_logs') || '[]'),
+  addLog: (msg, type='info') => {
+    const logs = DB.getLogs();
+    logs.unshift({ msg, type, time: new Date().toISOString() });
+    if (logs.length > 50) logs.pop();
+    localStorage.setItem('msb_logs', JSON.stringify(logs));
+  }
+};
+
+const nationalityFlags = {
+  'Thai':'🇹🇭','British':'🇬🇧','American':'🇺🇸','Australian':'🇦🇺',
+  'Chinese':'🇨🇳','Japanese':'🇯🇵','Korean':'🇰🇷','Indian':'🇮🇳',
+  'Singaporean':'🇸🇬','German':'🇩🇪','French':'🇫🇷','Russian':'🇷🇺','Other':'🌍'
+};
+
+// ─────────────────────────────────────────────
+// WEBHOOK LAYER
+// ─────────────────────────────────────────────
+async function triggerWebhook(type, order) {
+  const s = DB.getSettings();
+  const urls = {
+    'new_order': s.newOrderWebhook,
+    'order_ready': s.readyWebhook,
+    'picked_up': s.pickedUpWebhook,
+    'remarketing': s.remarketingWebhook
+  };
+  const url = urls[type];
+  if (!url) {
+    DB.addLog(`[${type}] No webhook URL set — skipped`, 'error');
+    renderLogs();
+    return;
+  }
+  const payload = { event: type, order, shop: s.shopName, address: s.address, mapsLink: s.mapsLink, timestamp: new Date().toISOString() };
+  try {
+    const resp = await fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const msg = `[${type}] → ${resp.ok ? '✓ Sent' : '✗ Error '+resp.status} | ${order.name}`;
+    DB.addLog(msg, resp.ok ? 'success' : 'error');
+    showNotification(resp.ok ? `✅ n8n triggered: ${type.replace(/_/g,' ')}` : `⚠️ Webhook error for ${type}`, resp.ok ? 'success' : 'error');
+  } catch(e) {
+    DB.addLog(`[${type}] ✗ Network error: ${e.message}`, 'error');
+    showNotification(`⚠️ Could not reach n8n — check URL in Settings`, 'error');
+  }
+  renderLogs();
+}
+
+// ─────────────────────────────────────────────
+// ORDER OPERATIONS
+// ─────────────────────────────────────────────
+function generateId() { return 'ORD-' + Date.now().toString(36).toUpperCase(); }
+
+function saveOrder() {
+  const name = document.getElementById('f-name').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const items = document.getElementById('f-items').value.trim();
+  const amount = document.getElementById('f-amount').value.trim();
+  if (!name || !phone || !items || !amount) { showNotification('Please fill required fields', 'error'); return; }
+
+  const order = {
+    id: generateId(),
+    name,
+    phone,
+    email: document.getElementById('f-email').value.trim(),
+    nationality: document.getElementById('f-nationality').value,
+    items,
+    fabric: document.getElementById('f-fabric').value.trim(),
+    amount: parseFloat(amount),
+    readyBy: document.getElementById('f-readyby').value.trim(),
+    hotel: document.getElementById('f-hotel').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    timeline: [{ event: 'Order placed', time: new Date().toISOString() }]
+  };
+
+  const orders = DB.getOrders();
+  orders.unshift(order);
+  DB.saveOrders(orders);
+  closeNewOrder();
+  renderAll();
+  triggerWebhook('new_order', order);
+  showNotification(`Order created for ${name}`);
+}
+
+function updateStatus(orderId, newStatus) {
+  const orders = DB.getOrders();
+  const idx = orders.findIndex(o => o.id === orderId);
+  if (idx === -1) return;
+  orders[idx].status = newStatus;
+  const eventMap = { inprogress:'In progress', ready:'Marked ready for pickup', pickedup:'Picked up by customer', cancelled:'Order cancelled' };
+  orders[idx].timeline.push({ event: eventMap[newStatus] || newStatus, time: new Date().toISOString() });
+  if (newStatus === 'ready') orders[idx].readyAt = new Date().toISOString();
+  if (newStatus === 'pickedup') orders[idx].pickedUpAt = new Date().toISOString();
+  DB.saveOrders(orders);
+  renderAll();
+  if (newStatus === 'ready') triggerWebhook('order_ready', orders[idx]);
+  if (newStatus === 'pickedup') triggerWebhook('picked_up', orders[idx]);
+  closeDetail();
+}
+
+// ─────────────────────────────────────────────
+// RENDER ENGINE
+// ─────────────────────────────────────────────
+let currentTab = 'pipeline';
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('view-pipeline').style.display = tab === 'pipeline' ? '' : 'none';
+  document.getElementById('view-all').style.display = tab === 'all' ? '' : 'none';
+  document.getElementById('view-remarketing').style.display = tab === 'remarketing' ? '' : 'none';
+  document.getElementById('view-campaigns').style.display = tab === 'campaigns' ? '' : 'none';
+  renderAll();
+}
+
+function getFiltered() {
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const nat = document.getElementById('filterNationality')?.value || '';
+  return DB.getOrders().filter(o => {
+    const matchQ = !q || o.name.toLowerCase().includes(q) || o.phone.includes(q) || (o.nationality||'').toLowerCase().includes(q) || (o.email||'').toLowerCase().includes(q);
+    const matchNat = !nat || o.nationality === nat;
+    return matchQ && matchNat;
+  });
+}
+
+function renderAll() {
+  const orders = getFiltered();
+  renderStats(DB.getOrders());
+  updateNationalityFilter(DB.getOrders());
+  if (currentTab === 'pipeline') renderPipeline(orders);
+  if (currentTab === 'all') renderAllOrders(orders);
+  if (currentTab === 'remarketing') renderRemarketing(DB.getOrders());
+  if (currentTab === 'campaigns') renderCampaignManager();
+}
+
+function renderStats(orders) {
+  const total = orders.length;
+  const active = orders.filter(o => ['pending','inprogress','ready'].includes(o.status)).length;
+  const revenue = orders.filter(o => o.status === 'pickedup').reduce((s,o) => s + (o.amount||0), 0);
+  const today = orders.filter(o => o.createdAt && o.createdAt.startsWith(new Date().toISOString().slice(0,10))).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Total Orders</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#3b82f6">${active}</div><div class="stat-label">Active Orders</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#22c55e">฿${revenue.toLocaleString()}</div><div class="stat-label">Revenue (Picked Up)</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#f59e0b">${today}</div><div class="stat-label">Orders Today</div></div>
+  `;
+}
+
+function updateNationalityFilter(orders) {
+  const sel = document.getElementById('filterNationality');
+  const current = sel.value;
+  const nats = [...new Set(orders.map(o => o.nationality).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All nationalities</option>' + nats.map(n => `<option value="${n}" ${n===current?'selected':''}>${nationalityFlags[n]||'🌍'} ${n}</option>`).join('');
+}
+
+function orderCard(order, showActions = true) {
+  const flag = nationalityFlags[order.nationality] || '🌍';
+  const time = order.createdAt ? timeAgo(order.createdAt) : '';
+  const statusActions = {
+    pending: `<button class="action-btn btn-ready" onclick="event.stopPropagation();updateStatus('${order.id}','inprogress')">▶ In Progress</button><button class="action-btn btn-view" onclick="event.stopPropagation();openDetail('${order.id}')">👁 View</button>`,
+    inprogress: `<button class="action-btn btn-ready" onclick="event.stopPropagation();updateStatus('${order.id}','ready')">✅ Mark Ready</button><button class="action-btn btn-view" onclick="event.stopPropagation();openDetail('${order.id}')">👁 View</button>`,
+    ready: `<button class="action-btn btn-pickup" onclick="event.stopPropagation();updateStatus('${order.id}','pickedup')">🎉 Picked Up</button><button class="action-btn btn-view" onclick="event.stopPropagation();openDetail('${order.id}')">👁 View</button>`,
+    pickedup: `<button class="action-btn btn-view" onclick="event.stopPropagation();openDetail('${order.id}')">👁 View Details</button>`
+  };
+  return `
+    <div class="order-card" onclick="openDetail('${order.id}')">
+      <div class="oc-top">
+        <div><span class="oc-name">${order.name}</span><span class="badge-nationality">${flag} ${order.nationality||''}</span></div>
+      </div>
+      <div class="oc-items">${order.items}</div>
+      ${order.fabric ? `<div class="oc-items" style="color:#94a3b8;font-size:10px;">${order.fabric}</div>` : ''}
+      <div class="oc-bottom">
+        <span class="oc-time">${time}</span>
+        <span class="oc-amount">฿${(order.amount||0).toLocaleString()}</span>
+      </div>
+      ${showActions ? `<div class="oc-actions">${statusActions[order.status] || ''}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderPipeline(orders) {
+  const statuses = ['pending','inprogress','ready','pickedup'];
+  statuses.forEach(s => {
+    const col = document.getElementById('col-'+s);
+    const filtered = orders.filter(o => o.status === s);
+    document.getElementById('count-'+s).textContent = filtered.length;
+    col.innerHTML = filtered.length ? filtered.map(o => orderCard(o)).join('') : `<div class="empty-state"><div class="icon">📭</div><p>No orders here</p></div>`;
+  });
+}
+
+function renderAllOrders(orders) {
+  const el = document.getElementById('all-orders-list');
+  if (!orders.length) { el.innerHTML = `<div class="empty-state" style="padding:60px"><div class="icon">📋</div><p>No orders yet. Add your first order!</p></div>`; return; }
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">${orders.map(o => orderCard(o)).join('')}</div>`;
+}
+
+function renderRemarketing(orders) {
+  const el = document.getElementById('remarketing-list');
+  const now = new Date();
+  const sixMonthsAgo = new Date(now.getTime() - 180*24*60*60*1000);
+  const targets = orders.filter(o => o.status === 'pickedup' && new Date(o.pickedUpAt||o.createdAt) < sixMonthsAgo);
+  const upcoming = orders.filter(o => o.status === 'pickedup' && new Date(o.pickedUpAt||o.createdAt) >= sixMonthsAgo);
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:10px;">
+          🎯 Ready for Remarketing (${targets.length})
+        </div>
+        ${targets.length ? targets.map(o => `
+          <div class="order-card" style="border-left:3px solid #f59e0b;">
+            <div class="oc-top"><div><span class="oc-name">${o.name}</span><span class="badge-nationality">${nationalityFlags[o.nationality]||'🌍'} ${o.nationality||''}</span></div></div>
+            <div class="oc-items">${o.items} — ฿${(o.amount||0).toLocaleString()}</div>
+            <div class="oc-time" style="font-size:11px;color:#94a3b8;margin-top:4px;">Last order: ${formatDate(o.pickedUpAt||o.createdAt)}</div>
+            <div class="oc-actions">
+              <button class="action-btn" style="background:#fef3c7;color:#92400e;flex:1;" onclick="triggerWebhook('remarketing',${JSON.stringify(o).replace(/"/g,'&quot;')})">📢 Send Campaign</button>
+            </div>
+          </div>
+        `).join('') : `<div class="empty-state"><p>No clients ready for remarketing yet.</p></div>`}
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:10px;">
+          ⏳ Upcoming (within 6 months) — ${upcoming.length}
+        </div>
+        ${upcoming.map(o => {
+          const pickupDate = new Date(o.pickedUpAt||o.createdAt);
+          const daysLeft = Math.ceil((pickupDate.getTime() + 180*24*60*60*1000 - now.getTime()) / (24*60*60*1000));
+          return `
+            <div class="order-card">
+              <div class="oc-top"><div><span class="oc-name">${o.name}</span><span class="badge-nationality">${nationalityFlags[o.nationality]||'🌍'} ${o.nationality||''}</span></div></div>
+              <div class="oc-items">${o.items}</div>
+              <div style="font-size:11px;color:#3b82f6;margin-top:4px;font-weight:600;">Remarket in ${daysLeft} days</div>
+            </div>
+          `;
+        }).join('') || `<div class="empty-state"><p>No completed orders yet.</p></div>`}
+      </div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────
+// CAMPAIGN MANAGER
+// ─────────────────────────────────────────────
+const SEGMENTS = [
+  { id: 'all',          label: '🌍 All Clients',     desc: 'Everyone in your list' },
+  { id: 'tourists',     label: '✈️ Tourists',         desc: 'Non-Thai clients only' },
+  { id: 'locals',       label: '🇹🇭 Locals',          desc: 'Thai clients only' },
+  { id: 'high_value',   label: '💎 High Value',       desc: 'Orders ฿30,000+' },
+  { id: 'vip',          label: '👑 VIP',              desc: 'Orders ฿50,000+' },
+  { id: 'repeat',       label: '🔁 Repeat Clients',   desc: 'Ordered more than once' },
+  { id: 'suit_buyers',  label: '🤵 Suit Buyers',      desc: 'Clients who bought suits' },
+  { id: 'shirt_buyers', label: '👔 Shirt Buyers',     desc: 'Clients who bought shirts' },
+  { id: 'inactive_6mo', label: '😴 Inactive 6mo+',   desc: 'No order in 6+ months' },
+  { id: 'recent_3mo',   label: '✨ Active (3mo)',      desc: 'Ordered in last 3 months' },
+  { id: 'europeans',    label: '🇪🇺 Europeans',        desc: 'British, French, German, Italian, etc.' },
+  { id: 'british',      label: '🇬🇧 British',          desc: 'British clients only' }
+];
+
+const CAMPAIGN_TEMPLATES = [
+  {
+    id: 'new_fabric',
+    name: '🧵 New Fabric Arrival',
+    desc: 'Announce new fabric collection to all clients',
+    defaultSubject: '✂️ New Fabrics Just Arrived — My Suit Bangkok',
+    defaultHeadline: 'Fresh Fabrics Just Arrived ✂️',
+    defaultBody: "We've just received a stunning new selection of premium fabrics — wools, linens, and blends perfect for the season. Visit us at Platinum Fashion Mall to see and feel them in person.",
+    defaultOffer: '5% off for returning clients this month',
+    defaultCta: 'Book a Fitting'
+  },
+  {
+    id: 'flash_sale',
+    name: '⚡ Flash Sale',
+    desc: 'Time-limited discount to drive immediate bookings',
+    defaultSubject: '⚡ 48-Hour Flash Sale — My Suit Bangkok',
+    defaultHeadline: '48-Hour Flash Sale ⚡',
+    defaultBody: "For the next 48 hours only, we're offering an exclusive discount to our valued clients. Limited slots available — book now to secure your spot.",
+    defaultOffer: '20% off all orders placed in the next 48 hours',
+    defaultCta: 'Claim Your Discount'
+  },
+  {
+    id: 'vip_preview',
+    name: '👑 VIP Preview',
+    desc: 'Early access offer for high-value clients',
+    defaultSubject: '👑 VIP Early Access — New Collection',
+    defaultHeadline: 'Exclusive VIP Preview 👑',
+    defaultBody: "As one of our most valued clients, we're giving you early access to our new collection before we announce it to everyone else. First come, first served.",
+    defaultOffer: 'Complimentary shirt with any suit order this week',
+    defaultCta: 'Book My VIP Appointment'
+  },
+  {
+    id: 'winback',
+    name: '💌 Win-Back',
+    desc: 'Re-engage clients who haven\'t ordered in 6+ months',
+    defaultSubject: '💌 We miss you — My Suit Bangkok',
+    defaultHeadline: "We Miss You! 💌",
+    defaultBody: "It's been a while since your last visit and we'd love to see you again. A lot has changed — new fabrics, new styles, and the same expert tailoring you loved.",
+    defaultOffer: '15% off your next order — no expiry',
+    defaultCta: 'Come Back & Save 15%'
+  }
+];
+
+let selectedSegment = 'all';
+let selectedTemplate = null;
+let selectedWaSegment = 'all';
+let selectedWaTemplate = null;
+let emailCustomFilter = null;   // { nationality, minSpend, itemsContain, recency } or null
+let waCustomFilter = null;
+
+const WA_TEMPLATES = [
+  {
+    id: 'new_fabric_arrival',
+    name: '🧵 New Fabric Arrival',
+    desc: 'Announce new fabrics to all past customers',
+    params: [
+      { name: 'customer_name', value: '{{customer_name}}' },
+      { name: 'shop_name', value: 'My Suit Bangkok' },
+      { name: 'offer', value: '5% off this month' }
+    ]
+  },
+  {
+    id: 'flash_sale_promo',
+    name: '⚡ Flash Sale',
+    desc: 'Time-limited discount to drive bookings fast',
+    params: [
+      { name: 'customer_name', value: '{{customer_name}}' },
+      { name: 'offer', value: '20% off — next 48 hours only' },
+      { name: 'expiry', value: '48 hours' }
+    ]
+  },
+  {
+    id: 'vip_client_preview',
+    name: '👑 VIP Preview',
+    desc: 'Early access offer for high-value clients',
+    params: [
+      { name: 'customer_name', value: '{{customer_name}}' },
+      { name: 'offer', value: 'Free shirt with any suit order this week' }
+    ]
+  },
+  {
+    id: 'win_back_offer',
+    name: '💌 Win-Back',
+    desc: 'Re-engage clients who have not ordered in 6+ months',
+    params: [
+      { name: 'customer_name', value: '{{customer_name}}' },
+      { name: 'offer', value: '15% off your next order — no expiry' }
+    ]
+  },
+  {
+    id: 'seasonal_promo',
+    name: '🎉 Seasonal Promo',
+    desc: 'Holiday or seasonal offer to your full list',
+    params: [
+      { name: 'customer_name', value: '{{customer_name}}' },
+      { name: 'promo_text', value: 'Special seasonal offer for valued clients' }
+    ]
+  }
+];
+
+function renderCampaignManager() {
+  const orders = DB.getOrders();
+  const totalContacts = [...new Set(orders.filter(o => o.email).map(o => o.email))].length;
+  const tourists = orders.filter(o => o.email && o.nationality !== 'Thai').length;
+  const locals = orders.filter(o => o.email && o.nationality === 'Thai').length;
+  const logs = DB.getLogs().filter(l => l.msg.includes('segment_blast') || l.msg.includes('campaign'));
+
+  document.getElementById('campaign-manager').innerHTML = `
+    <!-- Mailchimp Stats -->
+    <div class="mailchimp-stats">
+      <div class="mc-stat"><div class="mc-stat-num">${totalContacts}</div><div class="mc-stat-label">Email Subscribers</div></div>
+      <div class="mc-stat"><div class="mc-stat-num" style="color:#3b82f6">${tourists}</div><div class="mc-stat-label">Tourists</div></div>
+      <div class="mc-stat"><div class="mc-stat-num" style="color:#22c55e">${locals}</div><div class="mc-stat-label">Local Clients</div></div>
+    </div>
+
+    <div class="campaign-grid">
+      <!-- LEFT: Email Blast + WhatsApp Blast -->
+      <div>
+
+        <!-- Email Blast Card -->
+        <div class="campaign-card" style="margin-bottom:12px;">
+          <div class="cc-header">
+            <span class="cc-title">📧 Email Campaign</span>
+            <span class="cc-auto manual">Manual</span>
+          </div>
+          <div class="cc-body">
+            <p class="cc-desc">Choose a template, pick your audience, customize and send via Mailchimp.</p>
+
+            <div style="margin-bottom:12px;">
+              <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;display:block;margin-bottom:6px;">1. Choose Template</label>
+              <div style="display:grid;gap:6px;" id="template-list">
+                ${CAMPAIGN_TEMPLATES.map(t => `
+                  <div onclick="selectTemplate('${t.id}')" id="tpl-${t.id}" style="padding:9px 12px;border-radius:7px;border:1.5px solid #e2e8f0;cursor:pointer;transition:all .15s;background:#fff;">
+                    <div style="font-size:12px;font-weight:700;">${t.name}</div>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px;">${t.desc}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;display:block;margin-bottom:6px;">2. Choose Audience</label>
+              <div class="cc-segments" id="segment-chips">
+                ${SEGMENTS.map(s => `
+                  <span class="seg-chip ${s.id === 'all' ? 'selected' : ''}" onclick="selectSegment('${s.id}', this)">${s.label}</span>
+                `).join('')}
+              </div>
+              <div style="margin-top:8px;">
+                <button onclick="toggleFilter('email')" style="background:none;border:none;font-size:11px;font-weight:600;color:#6366f1;cursor:pointer;padding:0;" id="email-filter-toggle">＋ Custom Filter</button>
+                <div id="email-filter-panel" style="display:none;margin-top:8px;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                    <div>
+                      <label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">Nationality (comma-sep.)</label>
+                      <input id="ef-nationality" type="text" placeholder="British, French, German" style="width:100%;border:1.5px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:11px;outline:none;" oninput="previewFilterCount('email')">
+                    </div>
+                    <div>
+                      <label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">Min Spend (฿)</label>
+                      <input id="ef-min-spend" type="number" placeholder="e.g. 30000" style="width:100%;border:1.5px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:11px;outline:none;" oninput="previewFilterCount('email')">
+                    </div>
+                    <div>
+                      <label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">Items include</label>
+                      <input id="ef-items" type="text" placeholder="e.g. suit, shirt" style="width:100%;border:1.5px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:11px;outline:none;" oninput="previewFilterCount('email')">
+                    </div>
+                    <div>
+                      <label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">Last order</label>
+                      <select id="ef-recency" style="width:100%;border:1.5px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:11px;outline:none;" onchange="previewFilterCount('email')">
+                        <option value="">Any time</option>
+                        <option value="recent_3mo">Within last 3 months</option>
+                        <option value="inactive_3mo">Older than 3 months</option>
+                        <option value="inactive_6mo">Older than 6 months</option>
+                        <option value="inactive_12mo">Older than 12 months</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span id="ef-count" style="font-size:11px;color:#64748b;">👥 Estimated: — contacts</span>
+                    <div style="display:flex;gap:6px;">
+                      <button onclick="clearCustomFilter('email')" style="border:1px solid #e2e8f0;background:#fff;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Clear</button>
+                      <button onclick="applyCustomFilter('email')" style="background:#6366f1;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;">Apply Filter</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="email-custom-badge" style="display:none;margin-top:6px;padding:5px 10px;background:#ede9fe;border-radius:6px;font-size:11px;color:#5b21b6;font-weight:600;">
+                  🎯 Custom filter active — <span id="email-custom-count"></span> &nbsp;<button onclick="clearCustomFilter('email')" style="border:none;background:none;color:#7c3aed;cursor:pointer;font-size:11px;font-weight:700;">✕ Clear</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="campaign-form" id="campaign-form" style="display:none;">
+              <div>
+                <label>Email Subject Line</label>
+                <input id="cf-subject" type="text" placeholder="Subject line...">
+              </div>
+              <div>
+                <label>Headline</label>
+                <input id="cf-headline" type="text" placeholder="Big headline in the email...">
+              </div>
+              <div>
+                <label>Body Text</label>
+                <textarea id="cf-body" placeholder="Main message..."></textarea>
+              </div>
+              <div>
+                <label>Offer / CTA Text</label>
+                <input id="cf-offer" type="text" placeholder="e.g. 15% off returning clients">
+              </div>
+              <div>
+                <label>Button Text</label>
+                <input id="cf-cta" type="text" placeholder="e.g. Book My Fitting">
+              </div>
+            </div>
+
+            <button class="btn-send-campaign" id="send-campaign-btn" onclick="sendCampaignBlast()" disabled>
+              Select a template to continue
+            </button>
+
+            <div class="campaign-log" id="campaign-log">
+              <div style="color:#94a3b8;">// Campaign activity will appear here...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WhatsApp Blast Card -->
+        <div class="campaign-card">
+          <div class="cc-header">
+            <span class="cc-title">💬 WhatsApp Campaign</span>
+            <span class="cc-auto manual" style="background:#dcfce7;color:#16a34a;">WATI</span>
+          </div>
+          <div class="cc-body">
+            <p class="cc-desc">Send approved WhatsApp templates directly to customers via WATI broadcast.</p>
+
+            <div style="margin-bottom:12px;">
+              <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;display:block;margin-bottom:6px;">1. Choose Template</label>
+              <div style="display:grid;gap:6px;" id="wa-template-list">
+                ${WA_TEMPLATES.map(t => `
+                  <div onclick="selectWaTemplate('${t.id}')" id="wa-tpl-${t.id}" style="padding:9px 12px;border-radius:7px;border:1.5px solid #e2e8f0;cursor:pointer;transition:all .15s;background:#fff;">
+                    <div style="font-size:12px;font-weight:700;">${t.name}</div>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px;">${t.desc}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;display:block;margin-bottom:6px;">2. Choose Audience</label>
+              <div class="cc-segments" id="wa-segment-chips">
+                ${SEGMENTS.map(s => `
+                  <span class="seg-chip ${s.id === 'all' ? 'selected' : ''}" onclick="selectWaSegment('${s.id}', this)">${s.label}</span>
+                `).join('')}
+              </div>
+              <div style="margin-top:8px;">
+                <button onclick="toggleFilter('wa')" style="background:none;border:none;font-size:11px;font-weight:600;color:#16a34a;cursor:pointer;padding:0;" id="wa-filter-toggle">＋ Custom Filter</button>
+                <div id="wa-filter-panel" style="display:none;margin-top:8px;padding:12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                    <div>
+                      <label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">Nationality (comma-sep.)</label>
+                      <input id="wf-nationality" type="text" placeholder="British, French, German" style="width:100%;border:1.5px solid #bbf7d0;border-radius:6px;padding:5px 8px;font-size:11px;outline:none;" oninput="previewFilterCount('wa')">
+                    </div>
+                    <div>
+                      <label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">Min Spend (฿)</label>
+                      <input id="wf-min-spend" type="number" placeholder="e.g. 30000" style="width:100%;border:1.5px solid #bbf7d0;border-radius:6px;padding:5px 8px;font-size:11px;outline:none;" oninput="previewFilterCount('wa')">
+                    </div>
+                    <div>
+                      <label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">Items include</label>
+                      <input id="wf-items" type="text" placeholder="e.g. suit, shirt" style="width:100%;border:1.5px solid #bbf7d0;border-radius:6px;padding:5px 8px;font-size:11px;outline:none;" oninput="previewFilterCount('wa')">
+                    </div>
+                    <div>
+                      <label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px;">Last order</label>
+                      <select id="wf-recency" style="width:100%;border:1.5px solid #bbf7d0;border-radius:6px;padding:5px 8px;font-size:11px;outline:none;" onchange="previewFilterCount('wa')">
+                        <option value="">Any time</option>
+                        <option value="recent_3mo">Within last 3 months</option>
+                        <option value="inactive_3mo">Older than 3 months</option>
+                        <option value="inactive_6mo">Older than 6 months</option>
+                        <option value="inactive_12mo">Older than 12 months</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span id="wf-count" style="font-size:11px;color:#64748b;">👥 Estimated: — contacts</span>
+                    <div style="display:flex;gap:6px;">
+                      <button onclick="clearCustomFilter('wa')" style="border:1px solid #bbf7d0;background:#fff;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Clear</button>
+                      <button onclick="applyCustomFilter('wa')" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;">Apply Filter</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="wa-custom-badge" style="display:none;margin-top:6px;padding:5px 10px;background:#dcfce7;border-radius:6px;font-size:11px;color:#166534;font-weight:600;">
+                  🎯 Custom filter active — <span id="wa-custom-count"></span> &nbsp;<button onclick="clearCustomFilter('wa')" style="border:none;background:none;color:#16a34a;cursor:pointer;font-size:11px;font-weight:700;">✕ Clear</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="wa-selected-info" style="display:none;padding:8px 12px;background:#f0fdf4;border-radius:7px;border:1px solid #bbf7d0;margin-bottom:10px;font-size:11px;color:#166534;">
+              ✅ <span id="wa-selected-text"></span>
+            </div>
+
+            <button class="btn-send-campaign" id="wa-send-btn" onclick="sendWaCampaignBlast()" disabled style="background:linear-gradient(135deg,#25d366,#128c7e);">
+              Select a template to continue
+            </button>
+
+            <div class="campaign-log" id="wa-campaign-log">
+              <div style="color:#94a3b8;">// WhatsApp blast activity will appear here...</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: Automated Campaigns -->
+      <div>
+        <div class="campaign-card" style="margin-bottom:12px;">
+          <div class="cc-header">
+            <span class="cc-title">🤖 Automated Campaigns</span>
+            <span class="cc-auto auto">Auto</span>
+          </div>
+          <div class="cc-body">
+            <p class="cc-desc">These run automatically via n8n. No action needed once set up.</p>
+            <div>
+              ${[
+                { name: '🎊 New Year Campaign', schedule: 'January 1st, 9am', badge: 'active' },
+                { name: '🌸 Songkran Campaign', schedule: 'April 1st, 9am', badge: 'scheduled' },
+                { name: '🎄 Christmas Campaign', schedule: 'October 1st, 9am', badge: 'scheduled' },
+                { name: '🧵 Monthly Fabric Update', schedule: '1st of every month, 10am', badge: 'active' },
+                { name: '🔄 6-Month Remarketing', schedule: 'Every Monday, 10am', badge: 'active' }
+              ].map(c => `
+                <div class="scheduled-row">
+                  <div class="sr-left">
+                    <div class="sr-name">${c.name}</div>
+                    <div class="sr-desc">📅 ${c.schedule}</div>
+                  </div>
+                  <span class="sr-badge ${c.badge}">${c.badge === 'active' ? '✅ Active' : '🕐 Scheduled'}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div class="campaign-card">
+          <div class="cc-header">
+            <span class="cc-title">📊 What Gets Tracked</span>
+          </div>
+          <div class="cc-body">
+            <p class="cc-desc">Every customer is auto-tagged in Mailchimp when they order:</p>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;">
+              ${['tourist','local','high-value','mid-value','bought-suit','bought-shirt','bought-blazer','nat-british','nat-american','customer'].map(t =>
+                `<span style="background:#f1f5f9;color:#475569;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;">${t}</span>`
+              ).join('')}
+            </div>
+            <p class="cc-desc" style="margin-top:10px;">Use these tags in Mailchimp to create custom audiences anytime.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function selectTemplate(id) {
+  selectedTemplate = CAMPAIGN_TEMPLATES.find(t => t.id === id);
+  document.querySelectorAll('[id^="tpl-"]').forEach(el => {
+    el.style.borderColor = '#e2e8f0';
+    el.style.background = '#fff';
+  });
+  document.getElementById('tpl-' + id).style.borderColor = '#1a1a2e';
+  document.getElementById('tpl-' + id).style.background = '#f8f9fb';
+
+  // Populate form
+  document.getElementById('cf-subject').value = selectedTemplate.defaultSubject;
+  document.getElementById('cf-headline').value = selectedTemplate.defaultHeadline;
+  document.getElementById('cf-body').value = selectedTemplate.defaultBody;
+  document.getElementById('cf-offer').value = selectedTemplate.defaultOffer;
+  document.getElementById('cf-cta').value = selectedTemplate.defaultCta;
+  document.getElementById('campaign-form').style.display = 'grid';
+
+  const btn = document.getElementById('send-campaign-btn');
+  const seg = SEGMENTS.find(s => s.id === selectedSegment);
+  btn.textContent = `📤 Send to ${seg.label}`;
+  btn.disabled = false;
+}
+
+function selectSegment(id, el) {
+  selectedSegment = id;
+  document.querySelectorAll('.seg-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  if (selectedTemplate) {
+    const seg = SEGMENTS.find(s => s.id === id);
+    document.getElementById('send-campaign-btn').textContent = `📤 Send to ${seg.label}`;
+  }
+}
+
+async function sendCampaignBlast() {
+  if (!selectedTemplate) return;
+  const s = DB.getSettings();
+  if (!s.blastWebhook) {
+    showNotification('⚠️ Set Segment Blast webhook URL in Settings first', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('send-campaign-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Sending...';
+
+  const payload = {
+    segment: selectedSegment,
+    filters: selectedSegment === 'custom' ? emailCustomFilter : null,
+    campaign: {
+      subject: document.getElementById('cf-subject').value,
+      headline: document.getElementById('cf-headline').value,
+      body: document.getElementById('cf-body').value,
+      offer: document.getElementById('cf-offer').value,
+      cta: document.getElementById('cf-cta').value,
+      offerColor: '#1a1a2e'
+    }
+  };
+
+  try {
+    const resp = await fetch(s.blastWebhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const seg = SEGMENTS.find(s => s.id === selectedSegment);
+    const msg = resp.ok
+      ? `✅ Campaign sent to ${seg.label}: "${payload.campaign.subject}"`
+      : `✗ Error ${resp.status}`;
+    DB.addLog(`[segment_blast] ${msg}`, resp.ok ? 'success' : 'error');
+    showNotification(resp.ok ? `Campaign launched to ${seg.label}! 🚀` : 'Campaign failed — check webhook', resp.ok ? 'success' : 'error');
+    btn.textContent = resp.ok ? '✅ Sent!' : '✗ Failed';
+    setTimeout(() => {
+      btn.disabled = false;
+      const s2 = SEGMENTS.find(s => s.id === selectedSegment);
+      btn.textContent = `📤 Send to ${s2.label}`;
+    }, 3000);
+  } catch(e) {
+    showNotification('Network error — check Settings', 'error');
+    btn.disabled = false;
+    btn.textContent = '✗ Failed — Retry';
+  }
+
+  // Update log display
+  const logEl = document.getElementById('campaign-log');
+  if (logEl) {
+    const logs = DB.getLogs().slice(0, 5);
+    logEl.innerHTML = logs.map(l => `<div style="color:${l.type==='success'?'#4ade80':l.type==='error'?'#f87171':'#93c5fd'};padding:2px 0;">[${formatTime(l.time)}] ${l.msg}</div>`).join('');
+  }
+}
+
+// ─────────────────────────────────────────────
+// CUSTOM FILTER BUILDER
+// ─────────────────────────────────────────────
+
+function toggleFilter(type) {
+  const panel = document.getElementById(`${type === 'email' ? 'email' : 'wa'}-filter-panel`);
+  if (!panel) return;
+  panel.style.display = panel.style.display === 'none' ? '' : 'none';
+  if (panel.style.display !== 'none') previewFilterCount(type);
+}
+
+function getFilterInputs(type) {
+  const p = type === 'email' ? 'ef' : 'wf';
+  return {
+    nationality: (document.getElementById(`${p}-nationality`)?.value || '').trim(),
+    minSpend:    parseFloat(document.getElementById(`${p}-min-spend`)?.value) || 0,
+    itemsContain:(document.getElementById(`${p}-items`)?.value || '').trim().toLowerCase(),
+    recency:     document.getElementById(`${p}-recency`)?.value || ''
+  };
+}
+
+function matchesCustomFilter(order, filters) {
+  if (order.status !== 'pickedup') return false;
+  if (filters.nationality) {
+    const nats = filters.nationality.split(',').map(n => n.trim().toLowerCase());
+    if (!nats.some(n => (order.nationality||'').toLowerCase().includes(n))) return false;
+  }
+  if (filters.minSpend > 0 && (order.amount || 0) < filters.minSpend) return false;
+  if (filters.itemsContain) {
+    const terms = filters.itemsContain.split(',').map(t => t.trim());
+    if (!terms.some(t => (order.items||'').toLowerCase().includes(t))) return false;
+  }
+  if (filters.recency) {
+    const now = Date.now();
+    const lastOrder = new Date(order.pickedUpAt || order.createdAt).getTime();
+    const monthsAgo = (now - lastOrder) / (1000 * 60 * 60 * 24 * 30);
+    if (filters.recency === 'recent_3mo'   && monthsAgo > 3)  return false;
+    if (filters.recency === 'inactive_3mo' && monthsAgo < 3)  return false;
+    if (filters.recency === 'inactive_6mo' && monthsAgo < 6)  return false;
+    if (filters.recency === 'inactive_12mo'&& monthsAgo < 12) return false;
+  }
+  return true;
+}
+
+function previewFilterCount(type) {
+  const filters = getFilterInputs(type);
+  const orders = DB.getOrders();
+  const seen = new Set();
+  const count = orders.filter(o => {
+    if (!matchesCustomFilter(o, filters)) return false;
+    const key = (o.phone||o.email||o.name);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).length;
+  const p = type === 'email' ? 'ef' : 'wf';
+  const el = document.getElementById(`${p}-count`);
+  if (el) el.textContent = `👥 Estimated: ${count} contact${count !== 1 ? 's' : ''}`;
+}
+
+function applyCustomFilter(type) {
+  const filters = getFilterInputs(type);
+  const hasAnyFilter = filters.nationality || filters.minSpend > 0 || filters.itemsContain || filters.recency;
+  if (!hasAnyFilter) { clearCustomFilter(type); return; }
+
+  const orders = DB.getOrders();
+  const seen = new Set();
+  const count = orders.filter(o => {
+    if (!matchesCustomFilter(o, filters)) return false;
+    const key = (o.phone||o.email||o.name);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).length;
+
+  if (type === 'email') {
+    emailCustomFilter = filters;
+    selectedSegment = 'custom';
+    document.querySelectorAll('#segment-chips .seg-chip').forEach(c => c.classList.remove('selected'));
+    document.getElementById('email-filter-panel').style.display = 'none';
+    document.getElementById('email-custom-badge').style.display = '';
+    document.getElementById('email-custom-count').textContent = `${count} contacts`;
+    if (selectedTemplate) {
+      const btn = document.getElementById('send-campaign-btn');
+      if (btn) { btn.textContent = `📤 Send to ${count} Custom Contacts`; btn.disabled = false; }
+    }
+  } else {
+    waCustomFilter = filters;
+    selectedWaSegment = 'custom';
+    document.querySelectorAll('#wa-segment-chips .seg-chip').forEach(c => c.classList.remove('selected'));
+    document.getElementById('wa-filter-panel').style.display = 'none';
+    document.getElementById('wa-custom-badge').style.display = '';
+    document.getElementById('wa-custom-count').textContent = `${count} contacts`;
+    updateWaBtn();
+  }
+}
+
+function clearCustomFilter(type) {
+  if (type === 'email') {
+    emailCustomFilter = null;
+    selectedSegment = 'all';
+    const p = type === 'email' ? 'ef' : 'wf';
+    ['ef-nationality','ef-min-spend','ef-items'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const rec = document.getElementById('ef-recency'); if (rec) rec.value = '';
+    document.getElementById('email-filter-panel').style.display = 'none';
+    document.getElementById('email-custom-badge').style.display = 'none';
+    document.querySelectorAll('#segment-chips .seg-chip').forEach((c,i) => c.classList.toggle('selected', i===0));
+    if (selectedTemplate) {
+      const btn = document.getElementById('send-campaign-btn');
+      if (btn) { btn.textContent = '📤 Send to All Clients'; btn.disabled = false; }
+    }
+  } else {
+    waCustomFilter = null;
+    selectedWaSegment = 'all';
+    ['wf-nationality','wf-min-spend','wf-items'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const rec = document.getElementById('wf-recency'); if (rec) rec.value = '';
+    document.getElementById('wa-filter-panel').style.display = 'none';
+    document.getElementById('wa-custom-badge').style.display = 'none';
+    document.querySelectorAll('#wa-segment-chips .seg-chip').forEach((c,i) => c.classList.toggle('selected', i===0));
+    updateWaBtn();
+  }
+}
+
+function selectWaTemplate(id) {
+  selectedWaTemplate = WA_TEMPLATES.find(t => t.id === id);
+  document.querySelectorAll('[id^="wa-tpl-"]').forEach(el => {
+    el.style.border = '1.5px solid #e2e8f0';
+    el.style.background = '#fff';
+  });
+  const card = document.getElementById(`wa-tpl-${id}`);
+  if (card) {
+    card.style.border = '1.5px solid #25d366';
+    card.style.background = '#f0fdf4';
+  }
+  updateWaBtn();
+}
+
+function selectWaSegment(id, el) {
+  selectedWaSegment = id;
+  document.querySelectorAll('#wa-segment-chips .seg-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  updateWaBtn();
+}
+
+function updateWaBtn() {
+  const btn = document.getElementById('wa-send-btn');
+  const info = document.getElementById('wa-selected-info');
+  const infoText = document.getElementById('wa-selected-text');
+  if (!btn) return;
+  if (selectedWaTemplate) {
+    const seg = SEGMENTS.find(s => s.id === selectedWaSegment);
+    btn.disabled = false;
+    btn.textContent = `💬 Send WhatsApp to ${seg.label}`;
+    if (info && infoText) {
+      infoText.textContent = `"${selectedWaTemplate.name}" → ${seg.label} segment`;
+      info.style.display = 'block';
+    }
+  }
+}
+
+async function sendWaCampaignBlast() {
+  if (!selectedWaTemplate) return;
+  const s = DB.getSettings();
+  if (!s.waBlastWebhook) {
+    showNotification('⚠️ Set WhatsApp Blast webhook URL in Settings first', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('wa-send-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Sending...';
+
+  const payload = {
+    segment: selectedWaSegment,
+    filters: selectedWaSegment === 'custom' ? waCustomFilter : null,
+    templateName: selectedWaTemplate.id,
+    templateParams: selectedWaTemplate.params
+  };
+
+  try {
+    const resp = await fetch(s.waBlastWebhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const seg = SEGMENTS.find(s => s.id === selectedWaSegment);
+    const msg = resp.ok
+      ? `✅ WhatsApp blast sent to ${seg.label}: "${selectedWaTemplate.name}"`
+      : `✗ WA Error ${resp.status}`;
+    DB.addLog(`[wa_blast] ${msg}`, resp.ok ? 'success' : 'error');
+    showNotification(resp.ok ? `WhatsApp campaign launched to ${seg.label}! 💬` : 'WA Blast failed — check webhook', resp.ok ? 'success' : 'error');
+    btn.textContent = resp.ok ? '✅ Sent!' : '✗ Failed';
+    setTimeout(() => {
+      btn.disabled = false;
+      updateWaBtn();
+    }, 3000);
+  } catch(e) {
+    showNotification('Network error — check WA webhook in Settings', 'error');
+    btn.disabled = false;
+    btn.textContent = '✗ Failed — Retry';
+  }
+
+  const logEl = document.getElementById('wa-campaign-log');
+  if (logEl) {
+    const logs = DB.getLogs().filter(l => l.msg.includes('wa_blast')).slice(0, 5);
+    logEl.innerHTML = logs.length
+      ? logs.map(l => `<div style="color:${l.type==='success'?'#4ade80':l.type==='error'?'#f87171':'#93c5fd'};padding:2px 0;">[${formatTime(l.time)}] ${l.msg}</div>`).join('')
+      : '<div style="color:#94a3b8;">// No WA blasts yet...</div>';
+  }
+}
+
+// ─────────────────────────────────────────────
+// DETAIL MODAL
+// ─────────────────────────────────────────────
+function openDetail(orderId) {
+  const order = DB.getOrders().find(o => o.id === orderId);
+  if (!order) return;
+  const flag = nationalityFlags[order.nationality] || '🌍';
+  const statusBadge = { pending:'status-pending', inprogress:'status-inprogress', ready:'status-ready', pickedup:'status-pickedup', cancelled:'status-cancelled' };
+  const statusLabel = { pending:'Order Placed', inprogress:'In Progress', ready:'Ready for Pickup', pickedup:'Picked Up', cancelled:'Cancelled' };
+
+  const actionButtons = {
+    pending: `<button class="btn btn-primary" onclick="updateStatus('${order.id}','inprogress')">▶ Mark In Progress</button>`,
+    inprogress: `<button class="btn btn-primary" onclick="updateStatus('${order.id}','ready')">✅ Mark Ready — Trigger Pickup Alert</button>`,
+    ready: `<button class="btn btn-primary" onclick="updateStatus('${order.id}','pickedup')">🎉 Mark Picked Up</button>`,
+    pickedup: ''
+  };
+
+  document.getElementById('detail-title').textContent = `${flag} ${order.name} — ${order.id}`;
+  document.getElementById('detail-body').innerHTML = `
+    <div class="detail-section">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <span class="status-badge ${statusBadge[order.status]||'status-pending'}">${statusLabel[order.status]||order.status}</span>
+        <span style="font-size:12px;color:#64748b;">${order.id}</span>
+      </div>
+      ${actionButtons[order.status] ? `<div style="margin-bottom:16px;">${actionButtons[order.status]}</div>` : ''}
+    </div>
+    <div class="detail-section">
+      <h4>Customer</h4>
+      <div class="detail-row"><span class="label">Name</span><span class="value">${order.name}</span></div>
+      <div class="detail-row"><span class="label">Phone</span><span class="value"><a href="https://wa.me/${order.phone.replace(/[^0-9]/g,'')}" target="_blank">📱 ${order.phone}</a></span></div>
+      ${order.email ? `<div class="detail-row"><span class="label">Email</span><span class="value">${order.email}</span></div>` : ''}
+      <div class="detail-row"><span class="label">Nationality</span><span class="value">${flag} ${order.nationality||'-'}</span></div>
+      ${order.hotel ? `<div class="detail-row"><span class="label">Hotel</span><span class="value">${order.hotel}</span></div>` : ''}
+    </div>
+    <div class="detail-section">
+      <h4>Order</h4>
+      <div class="detail-row"><span class="label">Items</span><span class="value">${order.items}</span></div>
+      ${order.fabric ? `<div class="detail-row"><span class="label">Fabric/Style</span><span class="value">${order.fabric}</span></div>` : ''}
+      <div class="detail-row"><span class="label">Amount</span><span class="value">฿${(order.amount||0).toLocaleString()}</span></div>
+      ${order.readyBy ? `<div class="detail-row"><span class="label">Ready By</span><span class="value">${order.readyBy}</span></div>` : ''}
+      ${order.notes ? `<div class="detail-row"><span class="label">Notes</span><span class="value">${order.notes}</span></div>` : ''}
+    </div>
+    <div class="detail-section">
+      <h4>Timeline</h4>
+      <ul class="timeline">
+        ${(order.timeline||[]).map(e => `<li><div class="tl-dot"></div><div class="tl-text"><strong>${e.event}</strong> — ${formatDateTime(e.time)}</div></li>`).join('')}
+      </ul>
+    </div>
+    ${order.status !== 'cancelled' && order.status !== 'pickedup' ? `
+    <div class="detail-section" style="padding-top:12px;border-top:1px solid var(--border);">
+      <button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;" onclick="updateStatus('${order.id}','cancelled')">Cancel Order</button>
+    </div>` : ''}
+  `;
+  document.getElementById('detailOverlay').classList.add('active');
+}
+function closeDetail() { document.getElementById('detailOverlay').classList.remove('active'); }
+
+// ─────────────────────────────────────────────
+// SETTINGS
+// ─────────────────────────────────────────────
+function openSettings() {
+  const s = DB.getSettings();
+  document.getElementById('s-new-order').value = s.newOrderWebhook || '';
+  document.getElementById('s-ready').value = s.readyWebhook || '';
+  document.getElementById('s-pickedup').value = s.pickedUpWebhook || '';
+  document.getElementById('s-remarketing').value = s.remarketingWebhook || '';
+  document.getElementById('s-blast').value = s.blastWebhook || '';
+  document.getElementById('s-wa-blast').value = s.waBlastWebhook || '';
+  document.getElementById('s-shopname').value = s.shopName || 'My Suit Bangkok';
+  document.getElementById('s-address').value = s.address || '3rd Floor, Platinum Fashion Mall, Bangkok';
+  document.getElementById('s-maps').value = s.mapsLink || '';
+  renderLogs();
+  document.getElementById('settingsOverlay').classList.add('active');
+}
+function closeSettings() { document.getElementById('settingsOverlay').classList.remove('active'); }
+function saveSettings() {
+  DB.saveSettings({
+    newOrderWebhook: document.getElementById('s-new-order').value.trim(),
+    readyWebhook: document.getElementById('s-ready').value.trim(),
+    pickedUpWebhook: document.getElementById('s-pickedup').value.trim(),
+    remarketingWebhook: document.getElementById('s-remarketing').value.trim(),
+    blastWebhook: document.getElementById('s-blast').value.trim(),
+    waBlastWebhook: document.getElementById('s-wa-blast').value.trim(),
+    shopName: document.getElementById('s-shopname').value.trim(),
+    address: document.getElementById('s-address').value.trim(),
+    mapsLink: document.getElementById('s-maps').value.trim()
+  });
+  showNotification('Settings saved ✅');
+  closeSettings();
+}
+
+// ─────────────────────────────────────────────
+// IMPORT SYSTEM
+// ─────────────────────────────────────────────
+
+let importParsedRows = [];   // raw CSV rows as objects
+let importHeaders = [];      // detected headers from CSV
+let importColumnMap = {};    // { crmField: csvColumn }
+
+const IMPORT_CRM_FIELDS = [
+  { id: 'name',        label: 'Customer Name *', required: true },
+  { id: 'phone',       label: 'Phone Number *',  required: true },
+  { id: 'email',       label: 'Email' },
+  { id: 'nationality', label: 'Nationality / Country' },
+  { id: 'items',       label: 'Items Ordered' },
+  { id: 'fabric',      label: 'Fabric' },
+  { id: 'amount',      label: 'Amount (฿)' },
+  { id: 'hotel',       label: 'Hotel' },
+  { id: 'notes',       label: 'Notes' },
+  { id: 'createdAt',   label: 'Order Date' }
+];
+
+// Guess which CSV column maps to which CRM field
+const IMPORT_AUTO_MAP = {
+  name:        ['name','customer','client','full name','customer name','fullname'],
+  phone:       ['phone','mobile','tel','telephone','whatsapp','contact','phone number','mobile number'],
+  email:       ['email','e-mail','email address'],
+  nationality: ['nationality','country','nation','nat','country of origin'],
+  items:       ['items','products','order','ordered','garments','clothes','item'],
+  fabric:      ['fabric','material','cloth','textile'],
+  amount:      ['amount','price','total','cost','thb','baht','value','paid'],
+  hotel:       ['hotel','accommodation','staying','address'],
+  notes:       ['notes','note','remarks','comment','comments','special'],
+  createdAt:   ['date','order date','created','created at','purchase date','visit date']
+};
+
+function openImport() {
+  importParsedRows = [];
+  importHeaders = [];
+  importColumnMap = {};
+  document.getElementById('import-mapper').style.display = 'none';
+  document.getElementById('import-preview-section').style.display = 'none';
+  document.getElementById('import-message').style.display = 'none';
+  document.getElementById('import-btn').style.display = 'none';
+  document.getElementById('csv-paste-area').value = '';
+  document.getElementById('csv-file-input').value = '';
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  switchImportTab('upload');
+  document.getElementById('importOverlay').classList.add('active');
+}
+
+function closeImport() {
+  document.getElementById('importOverlay').classList.remove('active');
+}
+
+function switchImportTab(tab) {
+  document.getElementById('import-panel-upload').style.display = tab === 'upload' ? '' : 'none';
+  document.getElementById('import-panel-paste').style.display = tab === 'paste' ? '' : 'none';
+  document.getElementById('itab-upload').classList.toggle('active', tab === 'upload');
+  document.getElementById('itab-paste').classList.toggle('active', tab === 'paste');
+}
+
+function handleFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) readCSVFile(file);
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) readCSVFile(file);
+}
+
+function readCSVFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => parseCSVText(e.target.result);
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parsePasteData() {
+  const text = document.getElementById('csv-paste-area').value.trim();
+  if (!text) { showImportMessage('Paste some CSV data first.', 'error'); return; }
+  parseCSVText(text);
+}
+
+function parseCSVText(text) {
+  // Normalize line endings
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim());
+  if (lines.length < 2) { showImportMessage('CSV must have at least a header row and one data row.', 'error'); return; }
+
+  // Parse CSV with basic quote handling
+  const parseRow = (line) => {
+    const cols = [];
+    let cur = '', inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"') { inQuote = !inQuote; }
+      else if (line[i] === ',' && !inQuote) { cols.push(cur.trim()); cur = ''; }
+      else { cur += line[i]; }
+    }
+    cols.push(cur.trim());
+    return cols;
+  };
+
+  importHeaders = parseRow(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
+  importParsedRows = lines.slice(1).map(line => {
+    const vals = parseRow(line);
+    const obj = {};
+    importHeaders.forEach((h, i) => obj[h] = (vals[i] || '').replace(/^"|"$/g, '').trim());
+    return obj;
+  }).filter(r => Object.values(r).some(v => v));
+
+  // Auto-detect column mapping
+  importColumnMap = {};
+  IMPORT_CRM_FIELDS.forEach(field => {
+    const keywords = IMPORT_AUTO_MAP[field.id] || [];
+    const match = importHeaders.find(h => keywords.includes(h.toLowerCase().trim()));
+    if (match) importColumnMap[field.id] = match;
+    else importColumnMap[field.id] = '__skip__';
+  });
+
+  buildColumnMapper();
+  buildPreviewTable();
+  document.getElementById('import-btn').style.display = '';
+  document.getElementById('import-message').style.display = 'none';
+}
+
+function buildColumnMapper() {
+  const grid = document.getElementById('col-map-grid');
+  const opts = ['__skip__', ...importHeaders].map(h =>
+    `<option value="${h}">${h === '__skip__' ? '— Skip —' : h}</option>`
+  ).join('');
+
+  grid.innerHTML = IMPORT_CRM_FIELDS.map(field => `
+    <div class="col-map-label">${field.label}</div>
+    <select class="col-map-select" id="map-${field.id}" onchange="importColumnMap['${field.id}']=this.value;buildPreviewTable()">
+      ${['__skip__', ...importHeaders].map(h =>
+        `<option value="${h}" ${importColumnMap[field.id] === h ? 'selected' : ''}>${h === '__skip__' ? '— Skip —' : h}</option>`
+      ).join('')}
+    </select>
+  `).join('');
+
+  document.getElementById('import-mapper').style.display = '';
+}
+
+function buildPreviewTable() {
+  const preview = importParsedRows.slice(0, 5);
+  const mappedFields = IMPORT_CRM_FIELDS.filter(f => importColumnMap[f.id] !== '__skip__');
+
+  const headers = mappedFields.map(f => `<th>${f.label.replace(' *','')}</th>`).join('');
+  const rows = preview.map(row => {
+    const cells = mappedFields.map(f => {
+      const col = importColumnMap[f.id];
+      return `<td title="${row[col] || ''}">${row[col] || '<span style="color:#cbd5e1">—</span>'}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }).join('');
+
+  document.getElementById('import-preview-table').innerHTML = `<table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+  document.getElementById('preview-count').textContent = `(showing 5 of ${importParsedRows.length} rows)`;
+  document.getElementById('import-preview-section').style.display = '';
+  document.getElementById('import-btn').textContent = `📥 Import ${importParsedRows.length} Records`;
+}
+
+function executeImport() {
+  if (!importParsedRows.length) return;
+
+  const nameCol  = importColumnMap.name;
+  const phoneCol = importColumnMap.phone;
+
+  if (nameCol === '__skip__' || phoneCol === '__skip__') {
+    showImportMessage('You must map both Name and Phone columns to import.', 'error');
+    return;
+  }
+
+  const existing = DB.getOrders();
+  const existingPhones = new Set(existing.map(o => (o.phone || '').replace(/\D/g,'')));
+
+  let imported = 0, skipped = 0, errors = 0;
+
+  importParsedRows.forEach(row => {
+    const name  = row[nameCol]  || '';
+    const phone = (row[phoneCol] || '').replace(/[\s\-\+\(\)]/g, '');
+    if (!name || !phone) { errors++; return; }
+
+    const phoneClean = phone.replace(/\D/g,'');
+    if (existingPhones.has(phoneClean)) { skipped++; return; }
+    existingPhones.add(phoneClean);
+
+    const get = (fieldId) => {
+      const col = importColumnMap[fieldId];
+      return (col && col !== '__skip__' && row[col]) ? row[col] : '';
+    };
+
+    const rawAmount = get('amount').replace(/[^0-9.]/g, '');
+    const amount = rawAmount ? parseFloat(rawAmount) : 0;
+
+    let createdAt = new Date().toISOString();
+    const rawDate = get('createdAt');
+    if (rawDate) {
+      const parsed = new Date(rawDate);
+      if (!isNaN(parsed)) createdAt = parsed.toISOString();
+    }
+
+    const order = {
+      id: 'IMP' + Date.now() + Math.floor(Math.random()*1000),
+      name, phone,
+      email:       get('email'),
+      nationality: get('nationality'),
+      items:       get('items'),
+      fabric:      get('fabric'),
+      amount,
+      hotel:       get('hotel'),
+      notes:       get('notes'),
+      status:      'pickedup',
+      createdAt,
+      pickedUpAt:  createdAt,
+      timeline:    [{ event: 'Imported from records', time: new Date().toISOString() }],
+      imported:    true
+    };
+
+    existing.push(order);
+    imported++;
+  });
+
+  DB.saveOrders(existing);
+  DB.addLog(`[import] Imported ${imported} contacts (${skipped} duplicates skipped, ${errors} invalid rows)`, 'success');
+
+  const msg = `✅ ${imported} records imported successfully!${skipped ? ` ${skipped} duplicates skipped.` : ''}${errors ? ` ${errors} rows had missing name/phone.` : ''}`;
+  showImportMessage(msg, 'success');
+  document.getElementById('import-btn').style.display = 'none';
+  renderAll();
+}
+
+function showImportMessage(msg, type) {
+  const el = document.getElementById('import-message');
+  el.innerHTML = msg;
+  el.className = type === 'success' ? 'import-summary' : 'import-error';
+  el.style.display = '';
+}
+
+function downloadImportTemplate() {
+  const headers = ['Name','Phone','Email','Nationality','Items','Fabric','Amount (THB)','Hotel','Notes','Order Date'];
+  const example = ['John Smith','66812345678','john@email.com','British','2x Suit + 3x Shirt','Italian Wool','85000','Novotel Platinum','Rush order','2024-03-15'];
+  const csv = [headers.join(','), example.join(',')].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'MySuitBangkok_ImportTemplate.csv';
+  a.click();
+}
+
+function renderLogs() {
+  const logs = DB.getLogs();
+  const el = document.getElementById('webhook-log');
+  if (!el) return;
+  el.innerHTML = logs.length ? logs.map(l => `<div class="log-line ${l.type}">[${formatTime(l.time)}] ${l.msg}</div>`).join('') : `<div class="log-line info">// No webhook activity yet</div>`;
+}
+
+// ─────────────────────────────────────────────
+// MODALS
+// ─────────────────────────────────────────────
+function openNewOrder() {
+  ['f-name','f-phone','f-email','f-items','f-fabric','f-amount','f-readyby','f-hotel','f-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('newOrderOverlay').classList.add('active');
+  setTimeout(() => document.getElementById('f-name').focus(), 100);
+}
+function closeNewOrder() { document.getElementById('newOrderOverlay').classList.remove('active'); }
+
+// ─────────────────────────────────────────────
+// EXPORT
+// ─────────────────────────────────────────────
+function exportCSV() {
+  const orders = DB.getOrders();
+  const headers = ['ID','Name','Phone','Email','Nationality','Items','Fabric','Amount','Status','Hotel','Notes','Created','PickedUp'];
+  const rows = orders.map(o => [o.id,o.name,o.phone,o.email,o.nationality,o.items,o.fabric,o.amount,o.status,o.hotel,o.notes,o.createdAt,o.pickedUpAt||''].map(v => `"${(v||'').toString().replace(/"/g,'""')}"`));
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `MySuitBangkok_Orders_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ─────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────
+function showNotification(msg, type='success') {
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.className = `notification show ${type}`;
+  setTimeout(() => el.className = 'notification', 3000);
+}
+function timeAgo(iso) {
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+function formatDate(iso) {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+function formatDateTime(iso) {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+}
+function formatTime(iso) {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// Close overlays on background click
+document.querySelectorAll('.overlay').forEach(el => el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); }));
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.overlay.active').forEach(el => el.classList.remove('active'));
+  if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); openNewOrder(); }
+});
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+renderAll();
+
+// Mobile enhancements
+if (window.innerWidth <= 768) {
+  // Show swipe hint on pipeline
+  const hint = document.querySelector('.mobile-swipe-hint');
+  if (hint) hint.style.display = 'block';
+  // Extra bottom padding so browser chrome doesn't cover last items
+  document.querySelector('.container').style.paddingBottom = '32px';
+}
+</script>
+</body>
+</html>
