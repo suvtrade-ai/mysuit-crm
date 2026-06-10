@@ -645,11 +645,12 @@ const nationalityFlags = {
 // ─────────────────────────────────────────────
 async function triggerWebhook(type, order) {
   const s = DB.getSettings();
+  const _N8N = 'https://suvtrade16924.n8n-wsk.com/webhook';
   const urls = {
-    'new_order': s.newOrderWebhook,
-    'order_ready': s.readyWebhook,
-    'picked_up': s.pickedUpWebhook,
-    'remarketing': s.remarketingWebhook
+    'new_order':   s.newOrderWebhook   || _N8N + '/new-order',
+    'order_ready': s.readyWebhook      || _N8N + '/order-ready',
+    'picked_up':   s.pickedUpWebhook   || _N8N + '/picked-up',
+    'remarketing': s.remarketingWebhook || _N8N + '/remarketing'
   };
   const url = urls[type];
   if (!url) {
