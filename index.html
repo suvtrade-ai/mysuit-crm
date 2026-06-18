@@ -2558,6 +2558,37 @@ function renderInsights() {
 // Auto-init webhook defaults on page load
 initDefaultSettings();
 renderAll();
+
+// Auto-sync to Telegram bot silently on page load (after 2s delay)
+setTimeout(async () => {
+  try {
+    const orders = DB.getOrders();
+    const customers = DB.getCustomers();
+    if (!orders.length && !customers.length) return; // nothing to sync
+    const payload = {
+      orders: orders.map(o => ({
+        id: o.id, name: o.name, items: o.items, amount: o.amount || 0,
+        status: o.status, source: o.source || '', nationality: o.nationality || '',
+        createdAt: o.createdAt, pickedUpAt: o.pickedUpAt || null
+      })),
+      customers: customers.map(c => ({
+        id: c.id, name: c.name, email: c.email || '', phone: c.phone || '',
+        nationality: c.nationality || '', totalSpend: c.totalSpend || 0,
+        orderCount: c.orderCount || 0, source: c.source || '',
+        lastOrderDate: c.lastOrderDate || null
+      })),
+      syncedAt: new Date().toISOString()
+    };
+    await fetch('https://suvtrade16924.n8n-wsk.com/webhook/msb-data-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    console.log('[MSB Bot] Auto-synced on load ✓');
+  } catch(e) {
+    console.warn('[MSB Bot] Auto-sync failed silently:', e);
+  }
+}, 2000);
 </script>
 </body>
 </html>
